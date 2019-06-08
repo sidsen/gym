@@ -88,6 +88,16 @@ class CartPoleEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
+    #TODO: EVENTUALLY REPLACE THIS WITH ENV SAFEGUARD API?
+    # Make theta publicly accessible as a property 
+    @property
+    def theta_threshold_radians(self):
+        return self.__theta_threshold_radians
+
+    @theta_threshold_radians.setter
+    def theta_threshold_radians(self, theta):
+        self.__theta_threshold_radians = theta
+    
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         state = self.state

@@ -3,6 +3,7 @@ import warnings
 from gym.utils import colorize
 
 DEBUG = 10
+VERB = 15
 INFO = 20
 WARN = 30
 ERROR = 40
@@ -20,6 +21,10 @@ def set_level(level):
 def debug(msg, *args):
     if MIN_LEVEL <= DEBUG:
         print('%s: %s'%('DEBUG', msg % args))
+
+def verb(msg, *args):
+    if MIN_LEVEL <= VERB:
+        print('%s: %s'%('VERBOSE', msg % args))
 
 def info(msg, *args):
     if MIN_LEVEL <= INFO:

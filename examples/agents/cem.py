@@ -8,6 +8,7 @@ import json, sys, os
 from os import path
 from _policies import BinaryActionLinearPolicy # Different file so it can be unpickled
 import argparse
+import math
 
 def cem(f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
     """
@@ -23,25 +24,40 @@ def cem(f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
     n_elite = int(np.round(batch_size*elite_frac))
     th_std = np.ones_like(th_mean) * initial_std
 
+    #TODO: NEED TO IMPLEMENT STEP BUDGET CORRECTLY HERE: THAT IS, AFTER BUDGET IS EXHAUSTED,
+    #COMPUTE BEST THETAS CORRECTLY AND CANCEL REMAINING TRAINING ITERATIONS
+    # Each iteration explores a set of new models in the environment, keeps the top performing
+    # ones (using their mean as the final model for the iteration), and seeds the
+    # next iteration with these top performers.
     for _ in range(n_iter):
-        ths = np.array([th_mean + dth for dth in  th_std[None,:]*np.random.randn(batch_size, th_mean.size)])
+        # Generate batch_size new candidate models by adding random Gaussian (0,1) noise to the (surviving)
+        # previous set. The shape of the model depends on the shape of the observation space
+        # (i.e., features) of the environment
+        ths = np.array([th_mean + dth for dth in th_std[None,:]*np.random.randn(batch_size, th_mean.size)])
+        # Test each model in the environment and obtain its reward
         ys = np.array([f(th) for th in ths])
+        # Keep the top elite_frac models; their mean is the final model of this iteration and
+        # the set is used to seed the next iteration
         elite_inds = ys.argsort()[::-1][:n_elite]
         elite_ths = ths[elite_inds]
         th_mean = elite_ths.mean(axis=0)
         th_std = elite_ths.std(axis=0)
+        # This returns the final model/stats for this iteration to the caller
         yield {'ys' : ys, 'theta_mean' : th_mean, 'y_mean' : ys.mean()}
 
 def do_rollout(agent, env, num_steps, render=False):
     total_rew = 0
+    #TODO: ACCESSING THETA BREAKS ABSTRACTION; FIND A BETTER INTERFACE
+    total_theta = 0
     ob = env.reset()
     for t in range(num_steps):
         a = agent.act(ob)
         (ob, reward, done, _info) = env.step(a)
+        total_theta += math.fabs(ob[2])
         total_rew += reward
         if render and t%3==0: env.render()
         if done: break
-    return total_rew, t+1
+    return total_rew, t+1, total_theta
 
 if __name__ == '__main__':
     logger.set_level(logger.INFO)
