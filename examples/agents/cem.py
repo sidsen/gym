@@ -56,7 +56,10 @@ def do_rollout(agent, env, num_steps, render=False):
         total_theta += math.fabs(ob[2])
         total_rew += reward
         if render and t%3==0: env.render()
-        if done: break
+        if done:
+            #if t < 199 and math.fabs(ob[2]) < math.pi/2 and math.fabs(ob[0]) < 2.4:
+            #    print('Theta is {0} position is {1} t is {2}'.format(ob[2] * 360 / (2 * math.pi), ob[0], t))
+            break
     return total_rew, t+1, total_theta
 
 if __name__ == '__main__':
